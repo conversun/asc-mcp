@@ -717,6 +717,7 @@ struct WorkerToolDefinitionsTests {
         allNames += (await ProductPageOptimizationWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await PromotedPurchasesWorker(httpClient: client, uploadService: UploadService()).getTools()).map(\.name)
         allNames += (await MetricsWorker(httpClient: client).getTools()).map(\.name)
+        allNames += (await AppPrivacyWorker(httpClient: client).getTools()).map(\.name)
 
         let uniqueNames = Set(allNames)
         #expect(allNames.count == uniqueNames.count, "Duplicate tool names found")
@@ -762,6 +763,7 @@ struct WorkerToolDefinitionsTests {
             tools += await PromotedPurchasesWorker(httpClient: client, uploadService: UploadService()).getTools()
             tools += await MetricsWorker(httpClient: client).getTools()
             tools += await ReviewAttachmentsWorker(httpClient: client, uploadService: UploadService()).getTools()
+            tools += await AppPrivacyWorker(httpClient: client).getTools()
             return tools
         }()
 
@@ -784,5 +786,25 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("review_attachments_get"))
         #expect(names.contains("review_attachments_delete"))
         #expect(names.contains("review_attachments_list"))
+    }
+
+    // MARK: - AppPrivacyWorker (9 tools)
+
+    @Test("AppPrivacyWorker returns 9 tools with correct names")
+    func appPrivacyWorkerTools() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppPrivacyWorker(httpClient: client)
+        let tools = await worker.getTools()
+        #expect(tools.count == 9)
+        let names = Set(tools.map(\.name))
+        #expect(names.contains("app_privacy_list_categories"))
+        #expect(names.contains("app_privacy_list_purposes"))
+        #expect(names.contains("app_privacy_list_protections"))
+        #expect(names.contains("app_privacy_list_usages"))
+        #expect(names.contains("app_privacy_get_publish_state"))
+        #expect(names.contains("app_privacy_create_usage"))
+        #expect(names.contains("app_privacy_delete_usage"))
+        #expect(names.contains("app_privacy_publish"))
+        #expect(names.contains("app_privacy_unpublish"))
     }
 }

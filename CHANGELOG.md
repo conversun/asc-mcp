@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **AppPrivacyWorker (`app_privacy_*`, 9 tools)** — manage App Privacy / Privacy Nutrition Labels (`appDataUsages`, categories, purposes, protections, publish state). Targets Apple's unofficial Iris API at `appstoreconnect.apple.com/iris/v1/`. Apple historically requires Apple ID session auth for these endpoints; JWT API keys may be rejected (401/403). When that happens, handlers surface a clear error message instructing fallback to the App Store Connect web UI.
+- `app_privacy_list_categories`, `app_privacy_list_purposes`, `app_privacy_list_protections` return both the canonical static enum list (34 categories, 6 purposes, 4 protections — from fastlane spaceship + Apple App Privacy docs) and an optional live API response.
+- `app_privacy_list_usages`, `app_privacy_get_publish_state`, `app_privacy_create_usage`, `app_privacy_delete_usage`, `app_privacy_publish`, `app_privacy_unpublish` provide full CRUD + publishing flow.
+
+### Fixed
+
+- **`app_versions_update_age_rating` (Age Rating)** — fixed a triple-source bug that made the tool fail against Apple's current API:
+  1. Endpoint `GET /v1/appStoreVersions/{id}?include=ageRatingDeclaration` was removed in App Store Connect API v4.3 (March 2026). The handler now resolves the active `appInfo` and reads `GET /v1/appInfos/{id}/ageRatingDeclaration`.
+  2. Enum values `INFREQUENT_OR_MILD` and `FREQUENT_OR_INTENSE` were deprecated in API v4.1. Tool schema now uses `INFREQUENT` / `FREQUENT`.
+  3. `CreateAgeRatingDeclarationRequest` relationship was `appStoreVersion`; AgeRatingDeclaration is owned by `appInfo`, so the request now sends the `appInfo` relationship.
+- Tool parameter `version_id` is replaced with `app_id` (breaking for callers, but the old parameter could not have worked on the current API).
+
+### Changed
+
+- README and CLAUDE.md worker counts updated to 37 workers / 357 tools.
+
+
 ## [2.5.0] - 2026-05-14
 
 ### Added

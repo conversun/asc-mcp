@@ -339,7 +339,9 @@ struct UpdateAgeRatingDeclarationRequest: Codable, Sendable {
     }
 }
 
-/// Request to create age rating declaration
+/// Request to create age rating declaration.
+/// App Store Connect API v4.3 (March 2026) moved age rating ownership from
+/// appStoreVersions to appInfos. The relationship is now `appInfo`.
 struct CreateAgeRatingDeclarationRequest: Codable, Sendable {
     let data: Data
     struct Data: Codable, Sendable {
@@ -347,16 +349,16 @@ struct CreateAgeRatingDeclarationRequest: Codable, Sendable {
         let attributes: [String: AgeRatingValue]
         let relationships: Relationships
         struct Relationships: Codable, Sendable {
-            let appStoreVersion: RelationshipData
+            let appInfo: RelationshipData
         }
     }
 
-    init(versionId: String, attributes: [String: AgeRatingValue]) {
+    init(appInfoId: String, attributes: [String: AgeRatingValue]) {
         self.data = Data(
             type: "ageRatingDeclarations",
             attributes: attributes,
             relationships: Data.Relationships(
-                appStoreVersion: RelationshipData(data: .init(type: "appStoreVersions", id: versionId))
+                appInfo: RelationshipData(data: .init(type: "appInfos", id: appInfoId))
             )
         )
     }

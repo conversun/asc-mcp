@@ -129,7 +129,8 @@ enum TestFactory {
             WorkerToolSnapshot(key: "ppo", readmeName: "Product Page Optimization (A/B Tests)", tools: await ProductPageOptimizationWorker(httpClient: client).getTools()),
             WorkerToolSnapshot(key: "promoted", readmeName: "Promoted Purchases", tools: await PromotedPurchasesWorker(httpClient: client, uploadService: uploadService).getTools()),
             WorkerToolSnapshot(key: "review_attachments", readmeName: "Review Attachments", tools: await ReviewAttachmentsWorker(httpClient: client, uploadService: uploadService).getTools()),
-            WorkerToolSnapshot(key: "metrics", readmeName: "Performance Metrics", tools: await MetricsWorker(httpClient: client).getTools())
+            WorkerToolSnapshot(key: "metrics", readmeName: "Performance Metrics", tools: await MetricsWorker(httpClient: client).getTools()),
+            WorkerToolSnapshot(key: "app_privacy", readmeName: "App Privacy", tools: await AppPrivacyWorker(httpClient: client).getTools())
         ]
     }
 

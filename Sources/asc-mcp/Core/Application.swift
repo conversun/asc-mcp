@@ -75,6 +75,7 @@ public func runApplication(options: AppRuntimeOptions = AppRuntimeOptions()) asy
         - promoted_* -- promoted in-app purchases
         - metrics_* -- performance metrics and diagnostics
         - review_attachments_* -- app store review attachments (upload, get, delete, list)
+        - app_privacy_* -- App Privacy / Privacy Nutrition Labels (data categories, purposes, protections, publish state). Uses Apple's unofficial Iris API; JWT may be rejected — fall back to the App Store Connect web UI if calls return 401/403.
         """,
         capabilities: Server.Capabilities(
             tools: Server.Capabilities.Tools(listChanged: true)

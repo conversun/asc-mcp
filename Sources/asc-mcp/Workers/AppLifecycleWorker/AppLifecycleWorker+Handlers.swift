@@ -633,37 +633,83 @@ extension AppLifecycleWorker {
         }
     }
 
-    /// Updates or creates age rating declaration for the app version
+    /// Updates or creates age rating declaration for an app.
+    /// ASC API v4.3 moved age rating to appInfo level. This handler resolves
+    /// the active appInfo automatically, then PATCHes the existing
+    /// AgeRatingDeclaration (Apple creates one per appInfo on app creation).
     /// - Returns: JSON with age rating details and action taken (created/updated)
-    /// - Throws: CallTool.Result with error if version_id missing or API call fails
+    /// - Throws: CallTool.Result with error if app_id missing or API call fails
     func updateAgeRating(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let versionId = arguments["version_id"]?.stringValue else {
+              let appId = arguments["app_id"]?.stringValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
 
         do {
-            // First, check if age rating declaration already exists for this version
-            let versionResponse = try await httpClient.get(
-                "/v1/appStoreVersions/\(versionId)",
+            // Step 1: Resolve appInfo for this app. Prefer an editable state.
+            let appInfosResponse = try await httpClient.get(
+                "/v1/apps/\(appId)/appInfos",
+                parameters: ["limit": "20"],
+                as: PassthroughAPIResponse.self
+            )
+
+            guard case .array(let appInfos) = appInfosResponse.data, !appInfos.isEmpty else {
+                return CallTool.Result(
+                    content: [MCPContent.text("Error: No appInfo records found for app \(appId)")],
+                    isError: true
+                )
+            }
+
+            let editableStates: Set<String> = [
+                "PREPARE_FOR_SUBMISSION",
+                "DEVELOPER_REJECTED",
+                "REJECTED",
+                "REPLACED_WITH_NEW_INFO",
+                "WAITING_FOR_REVIEW"
+            ]
+            var selectedAppInfoId: String? = nil
+            var fallbackAppInfoId: String? = nil
+            for appInfo in appInfos {
+                guard case .object(let appInfoObj) = appInfo,
+                      case .string(let appInfoId) = appInfoObj["id"] else { continue }
+                if fallbackAppInfoId == nil {
+                    fallbackAppInfoId = appInfoId
+                }
+                if case .object(let attrs) = appInfoObj["attributes"],
+                   case .string(let state) = attrs["appStoreState"],
+                   editableStates.contains(state) {
+                    selectedAppInfoId = appInfoId
+                    break
+                }
+            }
+
+            guard let appInfoId = selectedAppInfoId ?? fallbackAppInfoId else {
+                return CallTool.Result(
+                    content: [MCPContent.text("Error: Could not extract appInfo ID for app \(appId)")],
+                    isError: true
+                )
+            }
+
+            // Step 2: Read appInfo with ageRatingDeclaration relationship.
+            let appInfoResponse = try await httpClient.get(
+                "/v1/appInfos/\(appInfoId)",
                 parameters: ["include": "ageRatingDeclaration"],
                 as: SingleResourceResponse.self
             )
 
             var existingAgeRatingId: String? = nil
-
-            // Check if age rating declaration relationship exists
-            if case .object(let relationships) = versionResponse.data.relationships,
+            if case .object(let relationships) = appInfoResponse.data.relationships,
                case .object(let ageRating) = relationships["ageRatingDeclaration"],
                case .object(let ageRatingData) = ageRating["data"],
                case .string(let ageRatingId) = ageRatingData["id"] {
                 existingAgeRatingId = ageRatingId
             }
 
-            // Map string enum age rating attributes (NONE/INFREQUENT_OR_MILD/FREQUENT_OR_INTENSE)
+            // Step 3: Build the attribute payload.
+            // Enum values follow ASC API v4.1+ syntax (INFREQUENT / FREQUENT).
             let stringFields: [String: String] = [
                 "alcohol_tobacco_or_drug_use": "alcoholTobaccoOrDrugUseOrReferences",
                 "contests": "contests",
@@ -683,7 +729,6 @@ extension AppLifecycleWorker {
                 "korea_age_rating_override": "koreaAgeRatingOverride"
             ]
 
-            // Map boolean age rating attributes
             let boolFields: [String: String] = [
                 "gambling": "gambling",
                 "unrestricted_web_access": "unrestrictedWebAccess",
@@ -696,7 +741,6 @@ extension AppLifecycleWorker {
                 "user_generated_content": "userGeneratedContent"
             ]
 
-            // Map string (URI) fields
             let uriFields: [String: String] = [
                 "developer_age_rating_info_url": "developerAgeRatingInfoUrl"
             ]
@@ -704,22 +748,19 @@ extension AppLifecycleWorker {
             var attributes: [String: AgeRatingValue] = [:]
 
             for (argName, apiName) in stringFields {
-                if let value = arguments[argName],
-                   let stringValue = value.stringValue {
+                if let value = arguments[argName], let stringValue = value.stringValue {
                     attributes[apiName] = .string(stringValue)
                 }
             }
 
             for (argName, apiName) in boolFields {
-                if let value = arguments[argName],
-                   let boolValue = value.boolValue {
+                if let value = arguments[argName], let boolValue = value.boolValue {
                     attributes[apiName] = .bool(boolValue)
                 }
             }
 
             for (argName, apiName) in uriFields {
-                if let value = arguments[argName],
-                   let stringValue = value.stringValue {
+                if let value = arguments[argName], let stringValue = value.stringValue {
                     attributes[apiName] = .string(stringValue)
                 }
             }
@@ -731,11 +772,11 @@ extension AppLifecycleWorker {
                 )
             }
 
+            // Step 4: PATCH or POST the declaration.
             let response: PassthroughAPIResponse
             let message: String
 
             if let ageRatingId = existingAgeRatingId {
-                // Age rating exists - update it with PATCH
                 let request = UpdateAgeRatingDeclarationRequest(
                     ageRatingId: ageRatingId,
                     attributes: attributes
@@ -745,11 +786,10 @@ extension AppLifecycleWorker {
                     body: request,
                     as: PassthroughAPIResponse.self
                 )
-                message = "Age rating declaration updated successfully"
+                message = "Age rating declaration updated successfully (appInfo: \(appInfoId))"
             } else {
-                // Age rating doesn't exist - create new with POST
                 let request = CreateAgeRatingDeclarationRequest(
-                    versionId: versionId,
+                    appInfoId: appInfoId,
                     attributes: attributes
                 )
                 response = try await httpClient.post(
@@ -757,11 +797,13 @@ extension AppLifecycleWorker {
                     body: request,
                     as: PassthroughAPIResponse.self
                 )
-                message = "Age rating declaration created successfully"
+                message = "Age rating declaration created successfully (appInfo: \(appInfoId))"
             }
 
             let result: [String: Any] = [
                 "success": true,
+                "app_id": appId,
+                "app_info_id": appInfoId,
                 "age_rating": response.data.asAny,
                 "message": message,
                 "action": existingAgeRatingId != nil ? "updated" : "created"

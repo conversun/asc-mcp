@@ -345,32 +345,32 @@ extension AppLifecycleWorker {
     func updateAgeRatingTool() -> Tool {
         Tool(
             name: "app_versions_update_age_rating",
-            description: "Update age rating declaration for the app",
+            description: "Update the age rating declaration for an app. App Store Connect API v4.3 (March 2026) moved age rating ownership from appStoreVersions to appInfos. This tool now accepts app_id and automatically resolves the active appInfo, then PATCHes the existing AgeRatingDeclaration (Apple creates one automatically with each appInfo).",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "version_id": .object([
+                    "app_id": .object([
                         "type": .string("string"),
-                        "description": .string("Version ID")
+                        "description": .string("App ID (use apps_list or apps_search to find it). The tool resolves the active appInfo automatically.")
                     ]),
                     "alcohol_tobacco_or_drug_use": .object([
                         "type": .string("string"),
                         "description": .string("Alcohol, tobacco, or drug use references"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array([.string("NONE"), .string("INFREQUENT"), .string("FREQUENT")])
                     ]),
                     "contests": .object([
                         "type": .string("string"),
                         "description": .string("Contests"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array([.string("NONE"), .string("INFREQUENT"), .string("FREQUENT")])
                     ]),
                     "gambling": .object([
                         "type": .string("boolean"),
-                        "description": .string("Whether the app contains gambling (true/false)")
+                        "description": .string("Whether the app contains gambling (true/false). Setting true forces 17+ rating.")
                     ]),
                     "gambling_simulated": .object([
                         "type": .string("string"),
                         "description": .string("Simulated gambling intensity level"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array([.string("NONE"), .string("INFREQUENT"), .string("FREQUENT")])
                     ]),
                     "unrestricted_web_access": .object([
                         "type": .string("boolean"),
@@ -379,61 +379,61 @@ extension AppLifecycleWorker {
                     "horror_fear_themes": .object([
                         "type": .string("string"),
                         "description": .string("Horror or fear themes"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array([.string("NONE"), .string("INFREQUENT"), .string("FREQUENT")])
                     ]),
                     "mature_suggestive_themes": .object([
                         "type": .string("string"),
                         "description": .string("Mature or suggestive themes"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array([.string("NONE"), .string("INFREQUENT"), .string("FREQUENT")])
                     ]),
                     "medical_treatment_information": .object([
                         "type": .string("string"),
                         "description": .string("Medical treatment information"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array([.string("NONE"), .string("INFREQUENT"), .string("FREQUENT")])
                     ]),
                     "profanity_crude_humor": .object([
                         "type": .string("string"),
                         "description": .string("Profanity or crude humor"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array([.string("NONE"), .string("INFREQUENT"), .string("FREQUENT")])
                     ]),
                     "sexual_content_nudity": .object([
                         "type": .string("string"),
                         "description": .string("Sexual content or nudity"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array([.string("NONE"), .string("INFREQUENT"), .string("FREQUENT")])
                     ]),
                     "violence_cartoon": .object([
                         "type": .string("string"),
                         "description": .string("Cartoon or fantasy violence"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array([.string("NONE"), .string("INFREQUENT"), .string("FREQUENT")])
                     ]),
                     "violence_realistic": .object([
                         "type": .string("string"),
                         "description": .string("Realistic violence"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array([.string("NONE"), .string("INFREQUENT"), .string("FREQUENT")])
                     ]),
                     "violence_realistic_prolonged": .object([
                         "type": .string("string"),
                         "description": .string("Prolonged graphic or sadistic realistic violence"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array([.string("NONE"), .string("INFREQUENT"), .string("FREQUENT")])
                     ]),
                     "sexual_content_graphic_nudity": .object([
                         "type": .string("string"),
                         "description": .string("Graphic sexual content and nudity"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array([.string("NONE"), .string("INFREQUENT"), .string("FREQUENT")])
                     ]),
                     "guns_or_other_weapons": .object([
                         "type": .string("string"),
-                        "description": .string("Guns or other weapons"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "description": .string("Guns or other weapons (API v3.6+)"),
+                        "enum": .array([.string("NONE"), .string("INFREQUENT"), .string("FREQUENT")])
                     ]),
                     "kids_age_band": .object([
                         "type": .string("string"),
-                        "description": .string("Kids age band (for kids apps)"),
+                        "description": .string("Kids age band (only for Made for Kids apps)"),
                         "enum": .array([.string("FIVE_AND_UNDER"), .string("SIX_TO_EIGHT"), .string("NINE_TO_ELEVEN")])
                     ]),
                     "age_rating_override": .object([
                         "type": .string("string"),
-                        "description": .string("Age rating override (v2)"),
+                        "description": .string("Age rating override v2 (mapped to ageRatingOverrideV2)"),
                         "enum": .array([.string("NONE"), .string("NINE_PLUS"), .string("THIRTEEN_PLUS"), .string("SIXTEEN_PLUS"), .string("EIGHTEEN_PLUS"), .string("UNRATED")])
                     ]),
                     "korea_age_rating_override": .object([
@@ -474,7 +474,7 @@ extension AppLifecycleWorker {
                         "description": .string("URL with developer's age rating information")
                     ])
                 ]),
-                "required": .array([.string("version_id")])
+                "required": .array([.string("app_id")])
             ])
         )
     }

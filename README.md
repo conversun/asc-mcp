@@ -29,7 +29,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **348 tools** across 36 worker domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **357 tools** across 37 worker domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
 
 ### Key capabilities
 
@@ -411,7 +411,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 }
 ```
 
-> **Note:** Windsurf has a 100-tool limit. The server exposes 348 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
+> **Note:** Windsurf has a 100-tool limit. The server exposes 357 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
 
 </details>
 
@@ -420,7 +420,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### Worker Filtering
 
-The server exposes **348 tools** across 36 worker domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
+The server exposes **357 tools** across 37 worker domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -506,6 +506,7 @@ The generated report records Apple spec metadata, path and operation counts, dom
 | `promoted` | `promoted_` | 9 | Promoted in-app purchases |
 | `review_attachments` | `review_attachments_` | 4 | App Store review attachments |
 | `metrics` | `metrics_` | 4 | Performance metrics, diagnostics |
+| `app_privacy` | `app_privacy_` | 9 | App Privacy / Privacy Nutrition Labels (Iris API, may require web fallback) |
 
 ### Token Cost
 
@@ -513,7 +514,7 @@ When connected to an LLM client, tool definitions consume context tokens. Here's
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | 348 | **~39,400** |
+| All workers (default) | 357 | **~40,400** |
 | Release workflow: `apps,builds,versions,reviews` | ~57 | ~7,000 |
 | Monetization: `apps,iap,subscriptions,pricing` | ~78 | ~9,000 |
 | TestFlight: `apps,builds,beta_groups,beta_testers` | ~56 | ~6,000 |
@@ -526,7 +527,7 @@ For Claude (200K context) ~39.4K tokens is about 20% of the window. For clients 
 
 ## Available Tools
 
-**348 tools** organized across 36 worker domains (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
+**357 tools** organized across 37 worker domains (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -1084,6 +1085,25 @@ Includes App Store review attachment upload, get, delete, and list tools.
 
 </details>
 
+<details>
+<summary><strong>App Privacy</strong> — 9 tools</summary>
+
+App Privacy (Privacy Nutrition Labels) tools target Apple's unofficial Iris API (`appstoreconnect.apple.com/iris/v1/`). Apple historically requires Apple ID session auth for these endpoints; JWT API keys may be rejected (401/403). If a call fails with an auth error, fall back to the App Store Connect web UI.
+
+| Tool | Description |
+|------|-------------|
+| `app_privacy_list_categories` | List the 34 known privacy data categories |
+| `app_privacy_list_purposes` | List data usage purposes (Analytics, App Functionality, etc.) |
+| `app_privacy_list_protections` | List data protection levels (linked / not linked / tracking / not collected) |
+| `app_privacy_list_usages` | List current privacy entries for an app |
+| `app_privacy_get_publish_state` | Get publish state of an app's privacy details |
+| `app_privacy_create_usage` | Create a (category, purpose, protection) entry |
+| `app_privacy_delete_usage` | Delete a privacy entry by id |
+| `app_privacy_publish` | Publish the current draft privacy details |
+| `app_privacy_unpublish` | Revert to draft state |
+
+</details>
+
 ## Usage Examples
 
 ### Complete Release Workflow
@@ -1168,7 +1188,7 @@ Sources/asc-mcp/
 │   ├── HTTPClient.swift            #   Actor-based HTTP with retry logic
 │   ├── JWTService.swift            #   ES256 JWT token generation
 │   └── CompaniesManager.swift      #   Multi-account management
-└── Workers/                        # MCP tool implementations (36 worker domains + MainWorker router)
+└── Workers/                        # MCP tool implementations (37 worker domains + MainWorker router)
     ├── MainWorker/WorkerManager    #   Central tool registry & routing
     ├── CompaniesWorker/            #   company_* tools
     ├── AuthWorker/                 #   auth_* tools

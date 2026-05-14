@@ -36,11 +36,11 @@ struct AgeRatingValueTests {
     }
 
     @Test func encodeString() throws {
-        let value = AgeRatingValue.string("FREQUENT_OR_INTENSE")
+        let value = AgeRatingValue.string("FREQUENT")
         let data = try JSONEncoder().encode(value)
         let decoded = try JSONDecoder().decode(AgeRatingValue.self, from: data)
         if case .string(let s) = decoded {
-            #expect(s == "FREQUENT_OR_INTENSE")
+            #expect(s == "FREQUENT")
         } else {
             Issue.record("Roundtrip failed")
         }

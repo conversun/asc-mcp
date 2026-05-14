@@ -90,6 +90,7 @@ public actor WorkerManager {
     private let uploadService: UploadService
     private var metricsWorker: MetricsWorker
     private var reviewAttachmentsWorker: ReviewAttachmentsWorker
+    private var appPrivacyWorker: AppPrivacyWorker
 
     /// Direct initialization with dependencies for tests and custom embedding.
     /// - Parameters:
@@ -139,6 +140,11 @@ public actor WorkerManager {
         self.promotedPurchasesWorker = await PromotedPurchasesWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.metricsWorker = await MetricsWorker(httpClient: dependencies.httpClient)
         self.reviewAttachmentsWorker = await ReviewAttachmentsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
+
+        // App Privacy lives on the Iris host (appstoreconnect.apple.com), not the
+        // standard API host. It reuses the same JWT service.
+        let appPrivacyClient = await AppPrivacyWorker.makeIrisClient(jwtService: dependencies.jwtService)
+        self.appPrivacyWorker = AppPrivacyWorker(httpClient: appPrivacyClient)
     }
 
     /// Convenience factory method for production use.
@@ -271,6 +277,8 @@ public actor WorkerManager {
             WorkerDescriptor(key: "promoted", enabledKeys: ["promoted"], prefixes: ["promoted_"], getTools: { await self.getPromotedPurchasesTools() }, handle: { try await self.promotedPurchasesWorker.handleTool($0) }),
             WorkerDescriptor(key: "metrics", enabledKeys: ["metrics"], prefixes: ["metrics_"], getTools: { await self.getMetricsTools() }, handle: { try await self.metricsWorker.handleTool($0) }),
             WorkerDescriptor(key: "review_attachments", enabledKeys: ["review_attachments"], prefixes: ["review_attachments_"], getTools: { await self.getReviewAttachmentsTools() }, handle: { try await self.reviewAttachmentsWorker.handleTool($0) })
+,
+            WorkerDescriptor(key: "app_privacy", enabledKeys: ["app_privacy"], prefixes: ["app_privacy_"], getTools: { await self.getAppPrivacyTools() }, handle: { try await self.appPrivacyWorker.handleTool($0) })
         ]
     }
     
@@ -382,6 +390,8 @@ public actor WorkerManager {
         self.promotedPurchasesWorker = await PromotedPurchasesWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.metricsWorker = await MetricsWorker(httpClient: dependencies.httpClient)
         self.reviewAttachmentsWorker = await ReviewAttachmentsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
+        let appPrivacyClient = await AppPrivacyWorker.makeIrisClient(jwtService: dependencies.jwtService)
+        self.appPrivacyWorker = AppPrivacyWorker(httpClient: appPrivacyClient)
 
         print("Workers reinitialized successfully", to: &standardError)
     }
@@ -578,5 +588,9 @@ public actor WorkerManager {
 
     private func getReviewAttachmentsTools() async -> [Tool] {
         return await reviewAttachmentsWorker.getTools()
+    }
+
+    private func getAppPrivacyTools() async -> [Tool] {
+        return await appPrivacyWorker.getTools()
     }
 }

@@ -77,7 +77,7 @@ struct ASCMCPApp {
             "subscriptions", "offer_codes", "winback", "intro_offers", "promo_offers",
             "sandbox", "beta_app", "pre_release", "beta_license",
             "screenshots", "custom_pages",
-            "ppo", "promoted", "metrics", "review_attachments"
+            "ppo", "promoted", "metrics", "review_attachments", "app_privacy"
         ]
 
         let requested = CommandLine.arguments[index + 1]

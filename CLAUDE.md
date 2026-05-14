@@ -50,7 +50,7 @@ Each company needs: `keyID`, `privateKeyPath` (or `privateKeyContent`); `issuerI
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (33 workers, 293 tools):
+**Workers** (37 workers, 357 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -86,6 +86,7 @@ Each company needs: `keyID`, `privateKeyPath` (or `privateKeyContent`); `issuerI
 | PromotedPurchasesWorker | `promoted_` | 9 | Promoted in-app purchases, images upload |
 | ReviewAttachmentsWorker | `review_attachments_` | 4 | App Store review attachments (upload, get, delete, list) |
 | MetricsWorker | `metrics_` | 4 | Performance/power metrics, diagnostics |
+| AppPrivacyWorker | `app_privacy_` | 9 | App Privacy / Privacy Nutrition Labels via Iris API (categories, purposes, protections, usages, publish state) |
 
 **Services**: HTTPClient (actor, GET/POST/PATCH/PUT/DELETE + retry with 429), JWTService (ES256), CompaniesManager
 

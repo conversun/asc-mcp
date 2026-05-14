@@ -1124,4 +1124,51 @@ struct ParameterValidationTests {
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
     }
+
+    // MARK: - AppPrivacyWorker
+
+    @Test("app_privacy_list_usages without app_id returns isError")
+    func appPrivacyListUsagesMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppPrivacyWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "app_privacy_list_usages", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("app_privacy_get_publish_state without app_id returns isError")
+    func appPrivacyGetPublishStateMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppPrivacyWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "app_privacy_get_publish_state", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("app_privacy_create_usage without required params returns isError")
+    func appPrivacyCreateUsageMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppPrivacyWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "app_privacy_create_usage", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("app_privacy_delete_usage without usage_id returns isError")
+    func appPrivacyDeleteUsageMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppPrivacyWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "app_privacy_delete_usage", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("app_privacy_publish without app_id returns isError")
+    func appPrivacyPublishMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppPrivacyWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "app_privacy_publish", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
 }
