@@ -512,18 +512,19 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("promo_offers_list_prices"))
     }
 
-    // MARK: - SandboxTestersWorker (3 tools)
+    // MARK: - SandboxTestersWorker (4 tools)
 
-    @Test("SandboxTestersWorker returns 3 tools with correct names")
+    @Test("SandboxTestersWorker returns 4 tools with correct names")
     func sandboxTestersWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = SandboxTestersWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 3)
+        #expect(tools.count == 4)
         let names = Set(tools.map(\.name))
         #expect(names.contains("sandbox_list"))
         #expect(names.contains("sandbox_update"))
         #expect(names.contains("sandbox_clear_purchase_history"))
+        #expect(names.contains("sandbox_create"))
     }
 
     // MARK: - BetaAppWorker (10 tools)

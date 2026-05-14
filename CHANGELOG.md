@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.2] - 2026-05-14
+
+### Fixed
+
+- **`iap_set_price_schedule` (Phase 6 verifier #1)** — the handler used to send a flat `manualPrices.data` array of `inAppPurchasePricePoints` references, which Apple rejected with `RELATIONSHIP.REQUIRED` on the price point field. The request now follows Apple's JSON:API compound document spec exactly: every manual price entry gets a client-generated placeholder ID, the lightweight reference lives under `data.relationships.manualPrices`, and the full resource (with the REQUIRED `inAppPurchasePricePoint` and `inAppPurchaseV2` relationships) sits in the top-level `included` array. Mirrors the working pattern already present in `CreateAppPriceScheduleRequest` for app-level pricing.
+- **`apps_list_localizations` (Phase 6 verifier #4)** — handler omitted the `fields[appStoreVersionLocalizations]` query param, so Apple's API returned only `id` and `locale` and the handler could only surface `has*` booleans. Now requests all attributes explicitly and returns the actual values (`description`, `keywords`, `whatsNew`, `promotionalText`, `marketingUrl`, `supportUrl`) alongside the booleans.
+
+### Added
+
+- **`sandbox_create` (Phase 6 verifier #3)** — new tool that calls `POST /v1/sandboxTesters` to provision a new sandbox Apple Account. The endpoint is undocumented in Apple's official API reference but is the same one fastlane spaceship's ConnectAPI client uses with JWT auth. If Apple rejects the call (4xx), the error tells the caller to fall back to the App Store Connect web UI.
+- New attributes on `CreateIAPPriceScheduleRequest`: `included: [CreateIAPPriceInlineRequest]` with `attributes.startDate`, `attributes.endDate`, and the mandatory `inAppPurchasePricePoint` + `inAppPurchaseV2` relationships.
+- New tool parameter on `iap_set_price_schedule`: optional `start_date` (ISO date) applied to every manual price entry.
+- `IAPPriceScheduleModelTests` (serialization regression — ensures `included` is present and `manualPrices.data` references match included IDs).
+
+### Changed
+
+- Tool count 357 → 358 (sandbox_create). README, CLAUDE.md, and count tests updated.
+
 ## [2.5.1] - 2026-05-14
 
 ### Added

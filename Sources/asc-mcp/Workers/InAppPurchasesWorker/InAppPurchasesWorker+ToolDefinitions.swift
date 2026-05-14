@@ -341,7 +341,7 @@ extension InAppPurchasesWorker {
     func setIAPPriceScheduleTool() -> Tool {
         return Tool(
             name: "iap_set_price_schedule",
-            description: "Set price schedule for an in-app purchase",
+            description: "Set price schedule for an in-app purchase. Each ID in manual_price_ids must be an inAppPurchasePricePoints ID (from iap_list_price_points). The tool builds the JSON:API compound document Apple requires — each manual price entry is wrapped with the mandatory inAppPurchasePricePoint and inAppPurchaseV2 relationships.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -355,7 +355,11 @@ extension InAppPurchasesWorker {
                     ]),
                     "manual_price_ids": .object([
                         "type": .string("string"),
-                        "description": .string("Comma-separated list of manual price IDs")
+                        "description": .string("Comma-separated list of inAppPurchasePricePoints IDs (one per territory). Use iap_list_price_points to discover valid IDs.")
+                    ]),
+                    "start_date": .object([
+                        "type": .string("string"),
+                        "description": .string("Optional ISO date (YYYY-MM-DD) applied to every manual price entry. Omit for prices that take effect immediately.")
                     ])
                 ]),
                 "required": .array([.string("iap_id"), .string("base_territory_id")])

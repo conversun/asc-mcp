@@ -50,7 +50,7 @@ Each company needs: `keyID`, `privateKeyPath` (or `privateKeyContent`); `issuerI
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (37 workers, 357 tools):
+**Workers** (37 workers, 358 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|

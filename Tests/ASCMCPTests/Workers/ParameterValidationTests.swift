@@ -1125,6 +1125,17 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
+    // MARK: - SandboxTestersWorker (create)
+
+    @Test("sandbox_create without required params returns isError")
+    func sandboxCreateMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = SandboxTestersWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "sandbox_create", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
     // MARK: - AppPrivacyWorker
 
     @Test("app_privacy_list_usages without app_id returns isError")

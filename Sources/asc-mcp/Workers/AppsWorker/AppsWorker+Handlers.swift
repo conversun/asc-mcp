@@ -885,7 +885,10 @@ extension AppsWorker {
             } else {
                 localizationsResponse = try await httpClient.get(
                     "/v1/appStoreVersions/\(versionId)/appStoreVersionLocalizations",
-                    parameters: [:],
+                    parameters: [
+                        "fields[appStoreVersionLocalizations]": "description,locale,keywords,marketingUrl,promotionalText,supportUrl,whatsNew",
+                        "limit": "200"
+                    ],
                     as: ASCAppStoreVersionLocalizationsResponse.self
                 )
             }
@@ -899,16 +902,23 @@ extension AppsWorker {
                     "locale": localization.locale
                 ]
 
+                // Return the actual field values. The has* booleans are kept
+                // for callers that only care about presence; raw values are
+                // surfaced alongside so consumers can introspect content.
                 if let description = localization.attributes?.description {
+                    localizationData["description"] = description
                     localizationData["hasDescription"] = !description.isEmpty
                 }
                 if let whatsNew = localization.attributes?.whatsNew {
+                    localizationData["whatsNew"] = whatsNew
                     localizationData["hasWhatsNew"] = !whatsNew.isEmpty
                 }
                 if let keywords = localization.attributes?.keywords {
+                    localizationData["keywords"] = keywords
                     localizationData["hasKeywords"] = !keywords.isEmpty
                 }
                 if let promotionalText = localization.attributes?.promotionalText {
+                    localizationData["promotionalText"] = promotionalText
                     localizationData["hasPromotionalText"] = !promotionalText.isEmpty
                 }
                 if let supportUrl = localization.attributes?.supportUrl {

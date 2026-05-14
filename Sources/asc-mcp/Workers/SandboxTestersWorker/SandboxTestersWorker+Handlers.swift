@@ -52,6 +52,68 @@ extension SandboxTestersWorker {
         }
     }
 
+    /// Creates a new sandbox Apple Account via the undocumented
+    /// POST /v1/sandboxTesters endpoint that fastlane uses successfully.
+    /// - Returns: JSON with the new tester id and attributes, or an error.
+    func createSandboxTester(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let firstName = arguments["first_name"]?.stringValue,
+              let lastName = arguments["last_name"]?.stringValue,
+              let email = arguments["email"]?.stringValue,
+              let password = arguments["password"]?.stringValue,
+              let confirmPassword = arguments["confirm_password"]?.stringValue else {
+            return CallTool.Result(
+                content: [MCPContent.text("Error: Required parameters: first_name, last_name, email, password, confirm_password")],
+                isError: true
+            )
+        }
+
+        guard password == confirmPassword else {
+            return CallTool.Result(
+                content: [MCPContent.text("Error: password and confirm_password do not match")],
+                isError: true
+            )
+        }
+
+        let request = CreateSandboxTesterRequest(
+            data: CreateSandboxTesterRequest.CreateData(
+                attributes: CreateSandboxTesterRequest.Attributes(
+                    firstName: firstName,
+                    lastName: lastName,
+                    email: email,
+                    password: password,
+                    confirmPassword: confirmPassword,
+                    secretQuestion: arguments["secret_question"]?.stringValue,
+                    secretAnswer: arguments["secret_answer"]?.stringValue,
+                    birthDate: arguments["birth_date"]?.stringValue,
+                    appStoreTerritory: arguments["app_store_territory"]?.stringValue
+                )
+            )
+        )
+
+        do {
+            // NOTE: list/update/clear use /v2/, but create only exists on /v1/.
+            // fastlane uses the same path; mixed v1/v2 is intentional.
+            let response: ASCSandboxTesterResponse = try await httpClient.post(
+                "/v1/sandboxTesters",
+                body: request,
+                as: ASCSandboxTesterResponse.self
+            )
+
+            let tester = formatSandboxTester(response.data)
+            let result: [String: Any] = [
+                "success": true,
+                "sandbox_tester": tester
+            ]
+            return MCPResult.jsonObject(result)
+        } catch {
+            return CallTool.Result(
+                content: [MCPContent.text("Error: Failed to create sandbox tester: \(error.localizedDescription). NOTE: POST /v1/sandboxTesters is not in Apple's public API reference; if you get a 4xx your team may be restricted to the App Store Connect web UI for creation.")],
+                isError: true
+            )
+        }
+    }
+
     /// Updates a sandbox tester's settings
     /// - Returns: JSON with updated sandbox tester details
     func updateSandboxTester(_ params: CallTool.Parameters) async throws -> CallTool.Result {

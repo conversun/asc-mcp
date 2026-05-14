@@ -25,6 +25,61 @@ extension SandboxTestersWorker {
         )
     }
 
+    func createSandboxTesterTool() -> Tool {
+        return Tool(
+            name: "sandbox_create",
+            description: "Create a new sandbox Apple Account for testing IAP / subscriptions. Uses POST /v1/sandboxTesters which is NOT in Apple's public API reference but is exposed for JWT API keys (the same endpoint fastlane spaceship calls). Apple may reject calls with 4xx if the endpoint is restricted for your team \u{2014} fall back to the App Store Connect web UI in that case. Email MUST be brand new (not associated with any existing Apple ID). Password must satisfy Apple's iCloud complexity rules.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "first_name": .object([
+                        "type": .string("string"),
+                        "description": .string("Tester first name")
+                    ]),
+                    "last_name": .object([
+                        "type": .string("string"),
+                        "description": .string("Tester last name")
+                    ]),
+                    "email": .object([
+                        "type": .string("string"),
+                        "description": .string("Brand-new email address. Must NOT be tied to any existing Apple ID. Subaddressing tip: use base+tag@domain for multiple regions.")
+                    ]),
+                    "password": .object([
+                        "type": .string("string"),
+                        "description": .string("Strong password (>=8 chars, mixed case + digit + special).")
+                    ]),
+                    "confirm_password": .object([
+                        "type": .string("string"),
+                        "description": .string("Must match password.")
+                    ]),
+                    "secret_question": .object([
+                        "type": .string("string"),
+                        "description": .string("Optional security question.")
+                    ]),
+                    "secret_answer": .object([
+                        "type": .string("string"),
+                        "description": .string("Optional security answer.")
+                    ]),
+                    "birth_date": .object([
+                        "type": .string("string"),
+                        "description": .string("Optional YYYY-MM-DD date of birth.")
+                    ]),
+                    "app_store_territory": .object([
+                        "type": .string("string"),
+                        "description": .string("Optional storefront territory code (USA, GBR, JPN, etc.).")
+                    ])
+                ]),
+                "required": .array([
+                    .string("first_name"),
+                    .string("last_name"),
+                    .string("email"),
+                    .string("password"),
+                    .string("confirm_password")
+                ])
+            ])
+        )
+    }
+
     func updateSandboxTesterTool() -> Tool {
         return Tool(
             name: "sandbox_update",

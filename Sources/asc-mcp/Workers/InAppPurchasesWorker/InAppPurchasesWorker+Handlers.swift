@@ -698,12 +698,50 @@ extension InAppPurchasesWorker {
         }
 
         do {
-            var manualPriceIdentifiers: [ASCResourceIdentifier] = []
+            // Parse the comma-separated price point IDs supplied by the caller.
+            let pricePointIds: [String]
             if let manualPriceIds = arguments["manual_price_ids"]?.stringValue {
-                manualPriceIdentifiers = manualPriceIds
+                pricePointIds = manualPriceIds
                     .split(separator: ",")
                     .map { String($0).trimmingCharacters(in: .whitespaces) }
-                    .map { ASCResourceIdentifier(type: "inAppPurchasePrices", id: $0) }
+                    .filter { !$0.isEmpty }
+            } else {
+                pricePointIds = []
+            }
+
+            // Optional start date applied to every manual price entry; null
+            // means the price kicks in immediately.
+            let startDate = arguments["start_date"]?.stringValue
+
+            // Build the compound document: each price gets a placeholder ID
+            // referenced from `manualPrices.data`, and a full resource in
+            // the top-level `included` array carrying inAppPurchasePricePoint
+            // and inAppPurchaseV2 relationships (both REQUIRED by Apple).
+            var manualPriceIdentifiers: [ASCResourceIdentifier] = []
+            var includedPrices: [CreateIAPPriceInlineRequest] = []
+
+            for (index, pricePointId) in pricePointIds.enumerated() {
+                let placeholderId = "price-\(index)"
+                manualPriceIdentifiers.append(
+                    ASCResourceIdentifier(type: "inAppPurchasePrices", id: placeholderId)
+                )
+                let attributes: CreateIAPPriceInlineRequest.Attributes? = startDate.map {
+                    CreateIAPPriceInlineRequest.Attributes(startDate: $0, endDate: nil)
+                }
+                includedPrices.append(
+                    CreateIAPPriceInlineRequest(
+                        id: placeholderId,
+                        attributes: attributes,
+                        relationships: CreateIAPPriceInlineRequest.CreateIAPPriceInlineRelationships(
+                            inAppPurchasePricePoint: .init(
+                                data: ASCResourceIdentifier(type: "inAppPurchasePricePoints", id: pricePointId)
+                            ),
+                            inAppPurchaseV2: .init(
+                                data: ASCResourceIdentifier(type: "inAppPurchases", id: iapId)
+                            )
+                        )
+                    )
+                )
             }
 
             let request = CreateIAPPriceScheduleRequest(
@@ -719,7 +757,8 @@ extension InAppPurchasesWorker {
                             data: ASCResourceIdentifier(type: "territories", id: baseTerritoryId)
                         )
                     )
-                )
+                ),
+                included: includedPrices
             )
 
             let response: ASCIAPPriceScheduleResponse = try await httpClient.post(

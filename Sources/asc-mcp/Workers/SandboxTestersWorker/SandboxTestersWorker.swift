@@ -13,6 +13,7 @@ public final class SandboxTestersWorker: Sendable {
     public func getTools() async -> [Tool] {
         return [
             listSandboxTestersTool(),
+            createSandboxTesterTool(),
             updateSandboxTesterTool(),
             clearPurchaseHistoryTool()
         ]
@@ -23,6 +24,8 @@ public final class SandboxTestersWorker: Sendable {
         switch params.name {
         case "sandbox_list":
             return try await listSandboxTesters(params)
+        case "sandbox_create":
+            return try await createSandboxTester(params)
         case "sandbox_update":
             return try await updateSandboxTester(params)
         case "sandbox_clear_purchase_history":

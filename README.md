@@ -29,7 +29,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **357 tools** across 37 worker domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **358 tools** across 37 worker domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
 
 ### Key capabilities
 
@@ -411,7 +411,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 }
 ```
 
-> **Note:** Windsurf has a 100-tool limit. The server exposes 357 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
+> **Note:** Windsurf has a 100-tool limit. The server exposes 358 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
 
 </details>
 
@@ -420,7 +420,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### Worker Filtering
 
-The server exposes **357 tools** across 37 worker domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
+The server exposes **358 tools** across 37 worker domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -490,7 +490,7 @@ The generated report records Apple spec metadata, path and operation counts, dom
 | `winback` | `winback_` | 5 | Win-back offers for subscriptions |
 | `intro_offers` | `intro_offers_` | 4 | Subscription introductory offers |
 | `promo_offers` | `promo_offers_` | 6 | Subscription promotional offers |
-| `sandbox` | `sandbox_` | 3 | Sandbox testers |
+| `sandbox` | `sandbox_` | 4 | Sandbox testers (incl. undocumented create) |
 | `beta_app` | `beta_app_` | 10 | Beta app localizations and review |
 | `pre_release` | `pre_release_` | 3 | Pre-release versions |
 | `beta_license` | `beta_license_` | 3 | Beta license agreements |
@@ -527,7 +527,7 @@ For Claude (200K context) ~39.4K tokens is about 20% of the window. For clients 
 
 ## Available Tools
 
-**357 tools** organized across 37 worker domains (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
+**358 tools** organized across 37 worker domains (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -888,11 +888,12 @@ Includes tester list/search/get/create/delete, app relationships, invitations, b
 </details>
 
 <details>
-<summary><strong>Sandbox Testers</strong> — 3 tools</summary>
+<summary><strong>Sandbox Testers</strong> — 4 tools</summary>
 
 | Tool | Description |
 |------|-------------|
 | `sandbox_list` | List sandbox testers |
+| `sandbox_create` | Create a new sandbox Apple Account (undocumented endpoint; may require web UI fallback) |
 | `sandbox_update` | Update sandbox tester settings |
 | `sandbox_clear_purchase_history` | Clear purchase history for sandbox testers |
 

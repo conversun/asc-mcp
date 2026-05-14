@@ -231,9 +231,18 @@ public struct ASCIAPPriceSchedule: Codable, Sendable {
 
 // MARK: - Create IAP Price Schedule
 
-/// Create IAP price schedule request
+/// Create IAP price schedule request.
+///
+/// App Store Connect's `POST /v1/inAppPurchasePriceSchedules` requires a
+/// JSON:API compound document: `manualPrices.data` carries lightweight
+/// references with client-generated placeholder IDs, while the full price
+/// resources (including the REQUIRED `inAppPurchasePricePoint` relationship)
+/// must live in the top-level `included` array. Previously this request was
+/// missing `included` entirely, so Apple rejected the call with
+/// RELATIONSHIP.REQUIRED on the price point field.
 public struct CreateIAPPriceScheduleRequest: Codable, Sendable {
     public let data: CreateData
+    public let included: [CreateIAPPriceInlineRequest]
 
     public struct CreateData: Codable, Sendable {
         public var type: String = "inAppPurchasePriceSchedules"
@@ -255,6 +264,36 @@ public struct CreateIAPPriceScheduleRequest: Codable, Sendable {
     }
 
     public struct BaseTerritoryRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+}
+
+/// Inline IAP price entry for the `included` array of a price schedule create.
+///
+/// Each entry MUST carry both `inAppPurchasePricePoint` (which price tier)
+/// and `inAppPurchaseV2` (which IAP) relationships. `startDate` is optional;
+/// `null` means "effective immediately".
+public struct CreateIAPPriceInlineRequest: Codable, Sendable {
+    public var type: String = "inAppPurchasePrices"
+    public let id: String
+    public let attributes: Attributes?
+    public let relationships: CreateIAPPriceInlineRelationships
+
+    public struct Attributes: Codable, Sendable {
+        public let startDate: String?
+        public let endDate: String?
+    }
+
+    public struct CreateIAPPriceInlineRelationships: Codable, Sendable {
+        public let inAppPurchasePricePoint: InAppPurchasePricePointRelationship
+        public let inAppPurchaseV2: InAppPurchaseV2Relationship
+    }
+
+    public struct InAppPurchasePricePointRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+
+    public struct InAppPurchaseV2Relationship: Codable, Sendable {
         public let data: ASCResourceIdentifier
     }
 }
