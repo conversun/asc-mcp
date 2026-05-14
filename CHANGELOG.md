@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-05-14
+
 ### Added
 
 - **AppPrivacyWorker (`app_privacy_*`, 9 tools)** — manage App Privacy / Privacy Nutrition Labels (`appDataUsages`, categories, purposes, protections, publish state). Targets Apple's unofficial Iris API at `appstoreconnect.apple.com/iris/v1/`. Apple historically requires Apple ID session auth for these endpoints; JWT API keys may be rejected (401/403). When that happens, handlers surface a clear error message instructing fallback to the App Store Connect web UI.
