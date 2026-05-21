@@ -17,6 +17,36 @@ extension CompaniesWorker {
             return "Individual Key"
         }
     }
+
+    /// Builds the standard success result for a completed company switch.
+    /// - Parameter company: Company that is now active.
+    /// - Returns: MCP result with masked credential identifiers and key type (`team` / `individual`).
+    func makeSwitchResult(for company: Company) -> CallTool.Result {
+        let result = """
+        **Switched to Company**
+
+        **\(company.name)**
+        • ID: `\(company.id)`
+        • Key ID: \(masked(company.keyID))
+        • Type: \(keyTypeDescription(company))
+
+        All subsequent API calls will use this company's credentials.
+        """
+
+        return MCPResult.json(
+            .object([
+                "success": .bool(true),
+                "company": .object([
+                    "id": .string(company.id),
+                    "name": .string(company.name),
+                    "keyID": .string(masked(company.keyID)),
+                    "issuerID": company.issuerID.map { .string(masked($0)) } ?? .null,
+                    "keyType": .string(company.isIndividualKey ? "individual" : "team")
+                ])
+            ]),
+            text: result
+        )
+    }
     
     /// Lists all available companies configured in the MCP server
     /// - Returns: Formatted list of companies with their IDs, names, and active status
@@ -80,32 +110,7 @@ extension CompaniesWorker {
 
         do {
             let company = try await manager.switchToCompany(companyIdOrName)
-
-            let result = """
-            **Switched to Company**
-
-            **\(company.name)**
-            • ID: `\(company.id)`
-            • Key ID: \(masked(company.keyID))
-            • Type: \(keyTypeDescription(company))
-
-            All subsequent API calls will use this company's credentials.
-            """
-
-            return MCPResult.json(
-                .object([
-                    "success": .bool(true),
-                    "company": .object([
-                        "id": .string(company.id),
-                        "name": .string(company.name),
-                        "keyID": .string(masked(company.keyID)),
-                        "issuerID": company.issuerID.map { .string(masked($0)) } ?? .null,
-                        "keyType": .string(company.isIndividualKey ? "individual" : "team")
-                    ])
-                ]),
-                text: result
-            )
-
+            return makeSwitchResult(for: company)
         } catch {
             return MCPResult.error("Error switching company: \(error.localizedDescription)")
         }
