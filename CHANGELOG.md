@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.2.0] - 2026-08-06
+
+This release is `conversun/asc-mcp`, a fork of `zelentsov-dev/asc-mcp` v4.1.3. It carries every upstream v4.1.3 tool and contract unchanged, plus the additions below.
+
 ### Added
 
 - **Individual API Key support.** A company may now be configured without `issuer_id`. Apple issues Individual API Keys without an issuer ID, so tokens for those keys are signed with `sub: "user"` instead of an `iss` claim, and local validation requires exactly that shape. `ASC_ISSUER_ID` and `ASC_COMPANY_{N}_ISSUER_ID` are optional; multi-company environment scanning is driven by the key ID alone. `company_list`, `company_switch`, `company_current`, and the startup log report each entry's key type, and `auth_validate_token` reports a `configured_individual_key` scope.

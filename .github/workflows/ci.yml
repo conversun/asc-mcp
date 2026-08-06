@@ -100,13 +100,13 @@ jobs:
             exit 1
           fi
 
-          readme_pin="mint install zelentsov-dev/asc-mcp@$tag"
+          readme_pin="mint install $GITHUB_REPOSITORY@$tag"
           if ! grep -Fq "$readme_pin" README.md; then
             echo "README must contain the release Mint pin: $readme_pin" >&2
             exit 1
           fi
           stale_pin="$(
-            grep -Eo 'mint install zelentsov-dev/asc-mcp@v[0-9]+\.[0-9]+\.[0-9]+' README.md \
+            grep -Eo "mint install $GITHUB_REPOSITORY@v[0-9]+\.[0-9]+\.[0-9]+" README.md \
               | grep -Fvx "$readme_pin" \
               | head -n 1 \
               || true
@@ -339,7 +339,7 @@ jobs:
         run: |
           set -euo pipefail
           brew install mint
-          mint install "zelentsov-dev/asc-mcp@$GITHUB_REF_NAME" --force
+          mint install "$GITHUB_REPOSITORY@$GITHUB_REF_NAME" --force
 
       - name: Run installed MCP smoke
         shell: bash

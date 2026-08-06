@@ -58,7 +58,7 @@ The recommended setup stores App Store Connect credentials once in a private loc
 
 ```bash
 brew install mint
-mint install zelentsov-dev/asc-mcp@v4.1.3
+mint install conversun/asc-mcp@v4.2.0
 ~/.mint/bin/asc-mcp --version
 ```
 
@@ -149,13 +149,13 @@ If the connection or request fails, see [Troubleshooting](#troubleshooting).
 
 ```bash
 brew install mint
-mint install zelentsov-dev/asc-mcp@v4.1.3
+mint install conversun/asc-mcp@v4.2.0
 ```
 
 Update or reinstall the pinned release:
 
 ```bash
-mint install zelentsov-dev/asc-mcp@v4.1.3 --force
+mint install conversun/asc-mcp@v4.2.0 --force
 ```
 
 Stable users should install a version tag. Installing `main` or `develop` is intended only for maintainers and pre-release testing.
@@ -165,7 +165,7 @@ Stable users should install a version tag. Installing `main` or `develop` is int
 Use Xcode 26.x on a compatible macOS version, or install a standalone Swift 6.2+ toolchain.
 
 ```bash
-git clone https://github.com/zelentsov-dev/asc-mcp.git
+git clone https://github.com/conversun/asc-mcp.git
 cd asc-mcp
 swift build -c release
 ```
