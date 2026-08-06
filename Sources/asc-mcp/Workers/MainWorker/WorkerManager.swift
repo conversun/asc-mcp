@@ -35,7 +35,11 @@ public actor WorkerDependencies: Sendable {
 
         print("Reinitializing workers for company: \(company.name)", to: &standardError)
         print("  Key ID: \(Redactor.maskIdentifier(company.keyID))", to: &standardError)
-        print("  Issuer ID: \(Redactor.maskIdentifier(company.issuerID))", to: &standardError)
+        if let issuerID = company.issuerID {
+            print("  Issuer ID: \(Redactor.maskIdentifier(issuerID))", to: &standardError)
+        } else {
+            print("  Issuer ID: (none - Individual API Key)", to: &standardError)
+        }
 
         let newJWTService = try JWTService(company: company)
         let newHTTPClient = await HTTPClient(

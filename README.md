@@ -234,12 +234,20 @@ For multiple companies, add more entries:
       "key_id": "YYYYYYYYYY",
       "issuer_id": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
       "key_path": "/Users/you/.keys/AuthKey_YYYYYYYYYY.p8"
+    },
+    {
+      "id": "individual-account",
+      "name": "Individual Account",
+      "key_id": "ZZZZZZZZZZ",
+      "key_path": "/Users/you/.keys/AuthKey_ZZZZZZZZZZ.p8"
     }
   ]
 }
 ```
 
 `vendor_number` is required only for `analytics_sales_report`, `analytics_financial_report`, and `analytics_app_summary`. Find it in [App Store Connect → Sales and Trends → Reports](https://appstoreconnect.apple.com/trends/reports).
+
+`issuer_id` is required for Team Keys and must be **omitted** for [Individual API Keys](https://appstoreconnect.apple.com/access/integrations/api), which Apple issues without an issuer ID. The server signs Individual Key tokens with `sub: "user"` instead of an `iss` claim. Individual keys are scoped to one user and cannot reach Provisioning, Sales and Finance, or notarytool endpoints; `company_list` and `company_current` report which key type each entry uses.
 
 <details>
 <summary><strong>Environment-variable alternative</strong></summary>
@@ -250,7 +258,7 @@ Single company:
 
 ```bash
 export ASC_KEY_ID=XXXXXXXXXX
-export ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+export ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx  # omit for an Individual API Key
 export ASC_PRIVATE_KEY_PATH=/Users/you/.keys/AuthKey_XXXXXXXXXX.p8
 export ASC_COMPANY_NAME="My Company"                 # optional
 export ASC_VENDOR_NUMBER=YOUR_VENDOR_NUMBER          # optional, analytics only
@@ -266,11 +274,11 @@ export ASC_COMPANY_1_KEY_PATH=/Users/you/.keys/AuthKey_XXXXXXXXXX.p8
 
 export ASC_COMPANY_2_NAME="Client Company"
 export ASC_COMPANY_2_KEY_ID=YYYYYYYYYY
-export ASC_COMPANY_2_ISSUER_ID=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
+export ASC_COMPANY_2_ISSUER_ID=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy  # omit for an Individual API Key
 export ASC_COMPANY_2_KEY_PATH=/Users/you/.keys/AuthKey_YYYYYYYYYY.p8
 ```
 
-Numbering starts at 1. Each consecutive entry must provide both `ASC_COMPANY_{N}_KEY_ID` and `ASC_COMPANY_{N}_ISSUER_ID`; scanning stops at the first missing pair.
+Numbering starts at 1. Scanning is driven by `ASC_COMPANY_{N}_KEY_ID` and stops at the first missing key ID. `ASC_COMPANY_{N}_ISSUER_ID` is required for Team Keys and must be omitted for Individual API Keys.
 
 </details>
 
@@ -284,7 +292,7 @@ The server resolves credentials in this order:
 3. `ASC_MCP_COMPANIES=/absolute/path/to/companies.json`
 4. Default configuration file locations, including `~/.config/asc-mcp/companies.json`
 5. `ASC_COMPANY_1_KEY_ID` and the other numbered multi-company variables
-6. `ASC_KEY_ID`, `ASC_ISSUER_ID`, and a private-key variable for one company
+6. `ASC_KEY_ID`, an optional `ASC_ISSUER_ID` (Team Keys only), and a private-key variable for one company
 
 </details>
 
@@ -619,7 +627,7 @@ Exact cost depends on the MCP host's serialization, tokenizer, and tool-discover
 | Tool | Description |
 |------|-------------|
 | `auth_generate_token` | Generate JWT token for API access |
-| `auth_validate_token` | Locally validate a standard team-key JWT: ES256 signature, configured `kid`/`iss`, App Store Connect audience, issued-at and expiration claims, and the 20-minute maximum lifetime. This makes no Apple API call and does not prove server acceptance. |
+| `auth_validate_token` | Locally validate a JWT: ES256 signature, configured `kid`, App Store Connect audience, issued-at and expiration claims, and the 20-minute maximum lifetime. Team Keys are checked against the configured `iss`; Individual API Keys are checked for `sub: "user"` and no `iss`. This makes no Apple API call and does not prove server acceptance. |
 | `auth_refresh_token` | Force refresh JWT token |
 | `auth_token_status` | Get JWT token cache status |
 

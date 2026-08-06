@@ -221,7 +221,7 @@ private func authValidationCompany(
 private func authValidationToken(
     privateKey: P256.Signing.PrivateKey,
     keyID: String,
-    issuerID: String,
+    issuerID: String?,
     audience: String,
     issuedAt: Int,
     expiration: Int,
@@ -233,12 +233,13 @@ private func authValidationToken(
         "kid": keyID,
         "typ": tokenType
     ])
-    let payload = try JSONSerialization.data(withJSONObject: [
-        "iss": issuerID,
+    var claims: [String: Any] = [
         "iat": issuedAt,
         "exp": expiration,
         "aud": audience
-    ])
+    ]
+    if let issuerID { claims["iss"] = issuerID }
+    let payload = try JSONSerialization.data(withJSONObject: claims)
     return try authValidationSignedToken(privateKey: privateKey, header: header, payload: payload)
 }
 

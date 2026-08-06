@@ -134,15 +134,20 @@ public actor CompaniesManager {
     /// Priority:
     /// 1. Multi-company: ASC_COMPANY_1_KEY_ID, ASC_COMPANY_2_KEY_ID, ...
     /// 2. Single-company: ASC_KEY_ID, ASC_ISSUER_ID
+    ///
+    /// `ASC_ISSUER_ID` / `ASC_COMPANY_N_ISSUER_ID` may be omitted for Individual API Keys,
+    /// which Apple issues without an issuer ID. Scanning is driven by the key ID alone.
+    /// - Parameter env: Environment dictionary to read; defaults to the current process environment.
     /// - Returns: CompaniesConfig if env vars found, nil otherwise
-    private static func loadFromEnvironment() -> CompaniesConfig? {
-        let env = ProcessInfo.processInfo.environment
+    static func loadFromEnvironment(
+        env: [String: String] = ProcessInfo.processInfo.environment
+    ) -> CompaniesConfig? {
 
         // Multi-company mode: ASC_COMPANY_N_KEY_ID
         var companies: [Company] = []
         var index = 1
-        while let keyID = env["ASC_COMPANY_\(index)_KEY_ID"],
-              let issuerID = env["ASC_COMPANY_\(index)_ISSUER_ID"] {
+        while let keyID = env["ASC_COMPANY_\(index)_KEY_ID"] {
+            let issuerID = env["ASC_COMPANY_\(index)_ISSUER_ID"]
             let keyPath = env["ASC_COMPANY_\(index)_KEY_PATH"] ?? ""
             let keyContent = env["ASC_COMPANY_\(index)_KEY"]
             let name = env["ASC_COMPANY_\(index)_NAME"] ?? "Company \(index)"
@@ -167,8 +172,8 @@ public actor CompaniesManager {
         }
 
         // Single-company mode: ASC_KEY_ID, ASC_ISSUER_ID
-        guard let keyID = env["ASC_KEY_ID"],
-              let issuerID = env["ASC_ISSUER_ID"] else { return nil }
+        guard let keyID = env["ASC_KEY_ID"] else { return nil }
+        let issuerID = env["ASC_ISSUER_ID"]
         let keyPath = env["ASC_PRIVATE_KEY_PATH"] ?? ""
         let keyContent = env["ASC_PRIVATE_KEY"]
         guard !keyPath.isEmpty || keyContent != nil else { return nil }

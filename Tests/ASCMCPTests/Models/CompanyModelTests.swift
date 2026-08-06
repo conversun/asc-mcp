@@ -103,4 +103,46 @@ struct CompanyModelTests {
             _ = try JSONDecoder().decode(Company.self, from: json)
         }
     }
+
+    // MARK: - Individual API Keys
+
+    @Test("Company decodes without issuer_id and reports an individual key")
+    func decodeIndividualKeyWithoutIssuer() throws {
+        let json = """
+        {"id":"c1","name":"Corp","key_id":"K1","key_path":"/tmp/k.p8"}
+        """.data(using: .utf8)!
+        let company = try JSONDecoder().decode(Company.self, from: json)
+        #expect(company.issuerID == nil)
+        #expect(company.isIndividualKey == true)
+    }
+
+    @Test("Company with an issuer_id is not an individual key")
+    func decodeTeamKeyIsNotIndividual() throws {
+        let json = """
+        {"id":"c1","name":"Corp","key_id":"K1","issuer_id":"I1"}
+        """.data(using: .utf8)!
+        let company = try JSONDecoder().decode(Company.self, from: json)
+        #expect(company.isIndividualKey == false)
+    }
+
+    @Test("Encoding an individual key omits issuer_id instead of writing null")
+    func encodeIndividualKeyOmitsIssuer() throws {
+        let company = Company(id: "i1", name: "Individual", keyID: "K1", issuerID: nil)
+        let data = try JSONEncoder().encode(company)
+        let json = try #require(
+            try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        #expect(json["issuer_id"] == nil)
+        #expect(json.keys.contains("key_id"))
+    }
+
+    @Test("Individual key survives an encode/decode roundtrip")
+    func individualKeyRoundtrip() throws {
+        let original = Company(id: "i1", name: "Individual", keyID: "K1", privateKeyContent: "pem")
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(Company.self, from: data)
+        #expect(decoded == original)
+        #expect(decoded.issuerID == nil)
+        #expect(decoded.isIndividualKey == true)
+    }
 }

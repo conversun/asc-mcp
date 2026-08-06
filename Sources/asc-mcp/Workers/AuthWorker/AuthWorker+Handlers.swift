@@ -22,7 +22,9 @@ extension AuthWorker {
         }
     }
 
-    /// Validates a team-key JWT locally against the configured key and claims
+    /// Validates a JWT locally against the configured key and claims.
+    /// Team keys are checked against the configured issuer ID; Individual API Keys are
+    /// checked for `sub: "user"` and the absence of an issuer claim.
     /// - Returns: Local validation result and whether Apple acceptance was checked
     /// - Throws: CallTool.Result with error if token parameter is missing
     func validateToken(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -33,11 +35,12 @@ extension AuthWorker {
         }
 
         let validation = await jwtService.validateTokenDetails(token)
+        let scope = await jwtService.usesIndividualKey ? "configured_individual_key" : "configured_team_key"
 
         var result: [String: Value] = [
             "success": .bool(true),
             "isValid": .bool(validation.isValid),
-            "validationScope": .string("configured_team_key"),
+            "validationScope": .string(scope),
             "appleAcceptanceChecked": .bool(false)
         ]
         if let failure = validation.failure {

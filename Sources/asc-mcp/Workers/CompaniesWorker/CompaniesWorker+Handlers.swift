@@ -9,6 +9,24 @@ extension CompaniesWorker {
         Redactor.maskIdentifier(value, visibleSuffix: visibleSuffix)
     }
 
+    /// Renders the issuer ID line for display, or an explicit marker for Individual API Keys.
+    /// - Returns: Masked issuer ID, or a human-readable note when the company has none.
+    private func issuerDisplay(_ company: Company) -> String {
+        guard let issuerID = company.issuerID else { return "(none - Individual API Key)" }
+        return masked(issuerID)
+    }
+
+    /// Structured issuer ID value: masked string for team keys, null for Individual API Keys.
+    private func issuerValue(_ company: Company) -> Value {
+        guard let issuerID = company.issuerID else { return .null }
+        return .string(masked(issuerID))
+    }
+
+    /// Machine-readable API key type discriminator.
+    private func keyType(_ company: Company) -> Value {
+        .string(company.isIndividualKey ? "individual" : "team")
+    }
+
     /// Builds the standard success result for a completed company switch.
     /// - Parameter company: Company that is now active.
     /// - Returns: MCP result with masked credential identifiers.
@@ -19,7 +37,8 @@ extension CompaniesWorker {
         **\(company.name)**
         • ID: `\(company.id)`
         • Key ID: \(masked(company.keyID))
-        • Issuer ID: \(masked(company.issuerID))
+        • Issuer ID: \(issuerDisplay(company))
+        • Key Type: \(company.isIndividualKey ? "Individual" : "Team")
 
         All subsequent API calls will use this company's credentials.
         """
@@ -31,7 +50,8 @@ extension CompaniesWorker {
                     "id": .string(company.id),
                     "name": .string(company.name),
                     "keyID": .string(masked(company.keyID)),
-                    "issuerID": .string(masked(company.issuerID))
+                    "issuerID": issuerValue(company),
+                    "keyType": keyType(company)
                 ])
             ]),
             text: result
@@ -59,6 +79,7 @@ extension CompaniesWorker {
             result += "\(index + 1). **\(company.name)**\(status)\n"
             result += "   • ID: `\(company.id)`\n"
             result += "   • Key ID: \(masked(company.keyID))\n"
+            result += "   • Key Type: \(company.isIndividualKey ? "Individual" : "Team")\n"
 
 
             result += "\n"
@@ -67,6 +88,7 @@ extension CompaniesWorker {
                 "id": .string(company.id),
                 "name": .string(company.name),
                 "keyID": .string(masked(company.keyID)),
+                "keyType": keyType(company),
                 "isCurrent": .bool(isCurrent)
             ]))
         }
@@ -129,7 +151,8 @@ extension CompaniesWorker {
         • ID: `\(company.id)`
         • NAME: \(company.name)
         • Key ID: \(masked(company.keyID))
-        • Issuer ID: \(masked(company.issuerID))
+        • Issuer ID: \(issuerDisplay(company))
+        • Key Type: \(company.isIndividualKey ? "Individual" : "Team")
         """
 
         return MCPResult.json(
@@ -139,7 +162,8 @@ extension CompaniesWorker {
                     "id": .string(company.id),
                     "name": .string(company.name),
                     "keyID": .string(masked(company.keyID)),
-                    "issuerID": .string(masked(company.issuerID))
+                    "issuerID": issuerValue(company),
+                    "keyType": keyType(company)
                 ])
             ]),
             text: result

@@ -13,12 +13,13 @@ enum TestFactory {
         P256.Signing.PrivateKey().pemRepresentation
     }
 
-    /// Create a test Company with in-memory key
+    /// Create a test Company with in-memory key.
+    /// - Parameter issuerID: Pass `nil` to build an Individual API Key company.
     static func makeCompany(
         id: String = "test-company",
         name: String = "Test Company",
         keyID: String = "TEST_KEY_ID",
-        issuerID: String = "TEST_ISSUER_ID"
+        issuerID: String? = "TEST_ISSUER_ID"
     ) -> Company {
         Company(
             id: id,

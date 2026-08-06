@@ -15,6 +15,7 @@ private struct DecodedJWTPayload: Decodable {
     let exp: Int
     let iat: Int?
     let iss: String?
+    let sub: String?
     let aud: String?
 }
 
@@ -33,6 +34,7 @@ enum TokenValidationFailure: String, Sendable, Equatable {
     case invalidSignature = "invalid_signature"
     case malformedPayload = "malformed_payload"
     case incorrectIssuer = "incorrect_issuer"
+    case incorrectSubject = "incorrect_subject"
     case incorrectAudience = "incorrect_audience"
     case invalidIssuedAt = "invalid_issued_at"
     case excessiveLifetime = "excessive_lifetime"
@@ -54,6 +56,10 @@ public actor JWTService {
 
     /// Token refresh leeway (seconds before expiration)
     private let tokenRefreshLeeway: TimeInterval = 90 // 1.5 minutes
+
+    /// True when the configured company authenticates with an Individual API Key.
+    /// Individual keys sign tokens with `sub: "user"` instead of an issuer ID.
+    public var usesIndividualKey: Bool { company.isIndividualKey }
 
     public init(company: Company) throws {
         self.company = company
@@ -159,13 +165,19 @@ public actor JWTService {
             typ: "JWT"
         )
 
-        // Payload
-        let payload = JWTPayload(
-            iss: company.issuerID,
-            iat: Int(now.timeIntervalSince1970),
-            exp: Int(expiration.timeIntervalSince1970),
-            aud: "appstoreconnect-v1"
-        )
+        // Payload.
+        // Team keys are identified by `iss` (the issuer ID). Individual keys have no
+        // issuer ID and are identified by `sub: "user"` instead. Apple rejects a token
+        // that carries both claims, so exactly one is emitted.
+        // https://developer.apple.com/documentation/appstoreconnectapi/generating-tokens-for-api-requests
+        let issuedAt = Int(now.timeIntervalSince1970)
+        let expiresAt = Int(expiration.timeIntervalSince1970)
+        let payload: JWTPayload
+        if let issuerID = company.issuerID {
+            payload = JWTPayload(iss: issuerID, sub: nil, iat: issuedAt, exp: expiresAt, aud: "appstoreconnect-v1")
+        } else {
+            payload = JWTPayload(iss: nil, sub: "user", iat: issuedAt, exp: expiresAt, aud: "appstoreconnect-v1")
+        }
 
         // Encode header and payload as Base64URL
         let headerData = try JSONEncoder().encode(header)
@@ -226,8 +238,18 @@ public actor JWTService {
               let payload = try? JSONDecoder().decode(DecodedJWTPayload.self, from: payloadData) else {
             return TokenValidationResult(isValid: false, failure: .malformedPayload)
         }
-        guard payload.iss == company.issuerID else {
-            return TokenValidationResult(isValid: false, failure: .incorrectIssuer)
+        if let expectedIssuer = company.issuerID {
+            guard payload.iss == expectedIssuer else {
+                return TokenValidationResult(isValid: false, failure: .incorrectIssuer)
+            }
+        } else {
+            // Individual API Key: Apple requires sub == "user" and forbids an iss claim.
+            guard payload.iss == nil else {
+                return TokenValidationResult(isValid: false, failure: .incorrectIssuer)
+            }
+            guard payload.sub == "user" else {
+                return TokenValidationResult(isValid: false, failure: .incorrectSubject)
+            }
         }
         guard payload.aud == "appstoreconnect-v1" else {
             return TokenValidationResult(isValid: false, failure: .incorrectAudience)
@@ -299,10 +321,24 @@ private struct JWTHeader: Codable {
 }
 
 private struct JWTPayload: Codable {
-    let iss: String
+    let iss: String?
+    let sub: String?
     let iat: Int
     let exp: Int
     let aud: String
+
+    private enum CodingKeys: String, CodingKey { case iss, sub, iat, exp, aud }
+
+    /// Emits only the claim that applies to the key type. A `null` iss or sub is
+    /// rejected by Apple, so absent claims must be omitted rather than encoded as null.
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(iss, forKey: .iss)
+        try container.encodeIfPresent(sub, forKey: .sub)
+        try container.encode(iat, forKey: .iat)
+        try container.encode(exp, forKey: .exp)
+        try container.encode(aud, forKey: .aud)
+    }
 }
 
 // MARK: - Base64URL Extension

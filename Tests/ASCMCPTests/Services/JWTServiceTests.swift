@@ -151,6 +151,85 @@ struct JWTServiceTests {
         #expect(isValid == false)
     }
 
+    // MARK: - Individual API Keys
+
+    @Test("Individual key token carries sub=user and omits the iss claim")
+    func individualKeyTokenClaims() async throws {
+        let company = TestFactory.makeCompany(issuerID: nil)
+        let service = try JWTService(company: company)
+        let token = try await service.getToken()
+
+        let payload = try decodeJWTPayload(token)
+
+        #expect(payload["sub"] as? String == "user")
+        #expect(payload["iss"] == nil)
+        #expect(payload["aud"] as? String == "appstoreconnect-v1")
+    }
+
+    @Test("Team key token carries iss and omits the sub claim")
+    func teamKeyTokenOmitsSubject() async throws {
+        let company = TestFactory.makeCompany()
+        let service = try JWTService(company: company)
+        let token = try await service.getToken()
+
+        let payload = try decodeJWTPayload(token)
+
+        #expect(payload["iss"] as? String == company.issuerID)
+        #expect(payload["sub"] == nil)
+    }
+
+    @Test("A freshly generated individual key token validates locally")
+    func validateIndividualKeyToken() async throws {
+        let service = try JWTService(company: TestFactory.makeCompany(issuerID: nil))
+        let token = try await service.getToken()
+        let isValid = await service.validateToken(token)
+        #expect(isValid == true)
+    }
+
+    @Test("A team key token is rejected when validated as an individual key")
+    func teamTokenRejectedByIndividualValidator() async throws {
+        let pem = TestFactory.testPEM
+        let teamCompany = Company(
+            id: "team", name: "Team",
+            keyID: "SHARED_KEY_ID", issuerID: "TEAM_ISSUER",
+            privateKeyContent: pem
+        )
+        let individualCompany = Company(
+            id: "individual", name: "Individual",
+            keyID: "SHARED_KEY_ID", issuerID: nil,
+            privateKeyContent: pem
+        )
+
+        let token = try await JWTService(company: teamCompany).getToken()
+        let validator = try JWTService(company: individualCompany)
+        let result = await validator.validateTokenDetails(token)
+
+        #expect(result.isValid == false)
+        #expect(result.failure == .incorrectIssuer)
+    }
+
+    @Test("An individual key token is rejected when validated as a team key")
+    func individualTokenRejectedByTeamValidator() async throws {
+        let pem = TestFactory.testPEM
+        let individualCompany = Company(
+            id: "individual", name: "Individual",
+            keyID: "SHARED_KEY_ID", issuerID: nil,
+            privateKeyContent: pem
+        )
+        let teamCompany = Company(
+            id: "team", name: "Team",
+            keyID: "SHARED_KEY_ID", issuerID: "TEAM_ISSUER",
+            privateKeyContent: pem
+        )
+
+        let token = try await JWTService(company: individualCompany).getToken()
+        let validator = try JWTService(company: teamCompany)
+        let result = await validator.validateTokenDetails(token)
+
+        #expect(result.isValid == false)
+        #expect(result.failure == .incorrectIssuer)
+    }
+
     // MARK: - JWT Decode Helper
 
     private func decodeJWTPayload(_ token: String) throws -> [String: Any] {
