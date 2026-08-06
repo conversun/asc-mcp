@@ -74,6 +74,7 @@ public func runApplication(options: AppRuntimeOptions = AppRuntimeOptions()) asy
         - metrics_* -- performance, diagnostics, and TestFlight usage metrics
         - review_attachments_* -- app store review attachments (upload, get, delete, list)
         - review_submissions_* -- App Store review submission inspection, recovery, item assembly, submission, and cancellation
+        - app_privacy_* -- App Store privacy label reference vocabulary (offline; data types, purposes, protection levels)
         """,
         capabilities: Server.Capabilities(
             tools: Server.Capabilities.Tools(listChanged: true)

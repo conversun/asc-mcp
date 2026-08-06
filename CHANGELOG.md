@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Individual API Key support.** A company may now be configured without `issuer_id`. Apple issues Individual API Keys without an issuer ID, so tokens for those keys are signed with `sub: "user"` instead of an `iss` claim, and local validation requires exactly that shape. `ASC_ISSUER_ID` and `ASC_COMPANY_{N}_ISSUER_ID` are optional; multi-company environment scanning is driven by the key ID alone. `company_list`, `company_switch`, `company_current`, and the startup log report each entry's key type, and `auth_validate_token` reports a `configured_individual_key` scope.
+- **App Privacy reference worker (`app_privacy_`, 3 tools).** `app_privacy_list_categories`, `app_privacy_list_purposes`, and `app_privacy_list_protections` return the App Store privacy nutrition label vocabulary. Apple does not expose privacy details in the App Store Connect API and the vocabulary is absent from the pinned Apple OpenAPI 4.4.1 document, so these tools answer entirely from checked-in reference data: no network request, no credentials, and no ability to read or write an app's declaration.
+- **Prebuilt macOS release binaries.** A tag-triggered workflow builds a universal binary and attaches `darwin-arm64` and `darwin-x86_64` archives with SHA-256 receipts. Each archive carries the `asc-mcp_asc-mcp.bundle` resource directory next to the executable, without which a relocated binary cannot load the OpenAPI operation manifest, and the workflow proves this by extracting its own archive and running `--version` plus the MCP stdio smoke against the extracted copy.
+
+### Compatibility
+
+- The public catalog grows from 502 to 505 tools and from 35 to 36 `--workers` filter keys. No existing tool name, input, or response field changed. `openapi-contract-check --strict` continues to report 0 structural errors and 0 implementation drift; the three new tools are declared `kind: local` because they issue no Apple request.
+- `issuer_id` remains required for Team Keys. Omitting it now selects Individual API Key signing rather than failing to load the company.
+
 ## [4.1.3] - 2026-07-21
 
 ### Fixed

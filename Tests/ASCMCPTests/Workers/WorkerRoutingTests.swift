@@ -565,6 +565,17 @@ struct WorkerRoutingTests {
         }
     }
 
+    // MARK: - AppPrivacyWorker
+
+    @Test("AppPrivacyWorker throws MCPError.methodNotFound for unknown tool")
+    func appPrivacyWorkerUnknownTool() async throws {
+        let worker = AppPrivacyWorker()
+        let params = CallTool.Parameters(name: "app_privacy_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
     // MARK: - BetaAppWorker
 
     @Test("BetaAppWorker throws MCPError.methodNotFound for unknown tool")

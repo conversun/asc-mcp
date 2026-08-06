@@ -1,0 +1,70 @@
+{
+  "workerKey": "app_privacy",
+  "tools": [
+    {
+      "tool": "app_privacy_list_categories",
+      "kind": "local",
+      "status": "partial",
+      "effect": "local",
+      "implementationState": "asBuilt",
+      "operations": [],
+      "fields": [],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": [
+          { "outputField": "success", "localRole": "local reference lookup completed" },
+          { "outputField": "categories", "localRole": "checked-in privacy data types, each with its App Store label group" },
+          { "outputField": "groups", "localRole": "distinct label groups in declaration order" },
+          { "outputField": "count", "localRole": "number of returned data types" },
+          { "outputField": "source", "localRole": "always local_reference_data; no Apple response is involved" },
+          { "outputField": "note", "localRole": "directs the caller to apply the declaration in App Store Connect" }
+        ]
+      },
+      "note": "Local reference vocabulary only. App Store privacy details are absent from Apple OpenAPI 4.4.1, so this tool performs no network request and cannot read or write an app's declaration."
+    },
+    {
+      "tool": "app_privacy_list_protections",
+      "kind": "local",
+      "status": "partial",
+      "effect": "local",
+      "implementationState": "asBuilt",
+      "operations": [],
+      "fields": [],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": [
+          { "outputField": "success", "localRole": "local reference lookup completed" },
+          { "outputField": "protections", "localRole": "checked-in data protection levels, each with its meaning" },
+          { "outputField": "count", "localRole": "number of returned protection levels" },
+          { "outputField": "source", "localRole": "always local_reference_data; no Apple response is involved" },
+          { "outputField": "note", "localRole": "directs the caller to apply the declaration in App Store Connect" }
+        ]
+      },
+      "note": "Local reference vocabulary only. App Store privacy details are absent from Apple OpenAPI 4.4.1, so this tool performs no network request and cannot read or write an app's declaration."
+    },
+    {
+      "tool": "app_privacy_list_purposes",
+      "kind": "local",
+      "status": "partial",
+      "effect": "local",
+      "implementationState": "asBuilt",
+      "operations": [],
+      "fields": [],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": [
+          { "outputField": "success", "localRole": "local reference lookup completed" },
+          { "outputField": "purposes", "localRole": "checked-in data usage purposes, each with what it covers" },
+          { "outputField": "count", "localRole": "number of returned purposes" },
+          { "outputField": "source", "localRole": "always local_reference_data; no Apple response is involved" },
+          { "outputField": "note", "localRole": "directs the caller to apply the declaration in App Store Connect" }
+        ]
+      },
+      "note": "Local reference vocabulary only. App Store privacy details are absent from Apple OpenAPI 4.4.1, so this tool performs no network request and cannot read or write an app's declaration."
+    }
+  ],
+  "implementationAliases": []
+}

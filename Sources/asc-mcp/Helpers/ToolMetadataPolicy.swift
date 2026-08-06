@@ -89,6 +89,9 @@ enum ToolMetadataPolicy {
     ]
 
     private static let explicitClosedWorldTools: Set<String> = [
+        "app_privacy_list_categories",
+        "app_privacy_list_protections",
+        "app_privacy_list_purposes",
         "auth_generate_token",
         "auth_refresh_token",
         "auth_token_status",

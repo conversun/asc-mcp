@@ -698,6 +698,19 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("sandbox_clear_purchase_history"))
     }
 
+    // MARK: - AppPrivacyWorker (3 tools)
+
+    @Test("AppPrivacyWorker returns 3 tools with correct names")
+    func appPrivacyWorkerTools() async throws {
+        let worker = AppPrivacyWorker()
+        let tools = await worker.getTools()
+        #expect(tools.count == 3)
+        let names = Set(tools.map(\.name))
+        #expect(names.contains("app_privacy_list_categories"))
+        #expect(names.contains("app_privacy_list_purposes"))
+        #expect(names.contains("app_privacy_list_protections"))
+    }
+
     // MARK: - BetaAppWorker (10 tools)
 
     @Test("BetaAppWorker returns 10 tools with correct names")
@@ -958,6 +971,7 @@ struct WorkerToolDefinitionsTests {
         allNames += (await MetricsWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await ReviewAttachmentsWorker(httpClient: client, uploadService: UploadService()).getTools()).map(\.name)
         allNames += (await ReviewSubmissionsWorker(httpClient: client).getTools()).map(\.name)
+        allNames += (await AppPrivacyWorker().getTools()).map(\.name)
 
         let uniqueNames = Set(allNames)
         #expect(allNames.count == uniqueNames.count, "Duplicate tool names found")

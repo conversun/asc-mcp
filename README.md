@@ -18,7 +18,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that connects a local macOS MCP client to the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **502 tools** across 33 App Store tool domains + 2 core domains, enabling you to automate iOS and macOS release workflows through natural language.
+**asc-mcp** is a Swift-based MCP server that connects a local macOS MCP client to the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **505 tools** across 34 App Store tool domains + 2 core domains, enabling you to automate iOS and macOS release workflows through natural language.
 
 Configuration examples are included for Codex, Claude Code, Claude Desktop, Gemini CLI, VS Code with GitHub Copilot, Continue, Cursor, and Devin Desktop (formerly Windsurf). Client configuration is documented; release CI verifies installation, MCP initialization, and tool discovery on macOS rather than launching every third-party client.
 
@@ -488,7 +488,7 @@ You can also disable individual tools in the client. Server-side worker filterin
 
 ## Worker Filtering
 
-The server exposes **502 tools** across 33 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit; Cascade in Devin Desktop currently allows 100 active tools. Use the 35 `--workers` filter keys to enable only the workers you need:
+The server exposes **505 tools** across 34 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit; Cascade in Devin Desktop currently allows 100 active tools. Use the 36 `--workers` filter keys to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -588,6 +588,7 @@ The older `openapi-coverage` command remains available for the high-level domain
 | `review_attachments` | `review_attachments_` | 4 | App Store review attachments |
 | `review_submissions` | `review_submissions_` | 9 | Generic App Store review submissions and submission items |
 | `metrics` | `metrics_` | 9 | Performance metrics, diagnostics, and TestFlight usage metrics |
+| `app_privacy` | `app_privacy_` | 3 | App Store privacy label reference vocabulary (offline) |
 
 ### Tool Catalog Size
 
@@ -595,7 +596,7 @@ When an MCP client eagerly loads every tool definition, the approximate schema f
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | 502 | **~60,000** |
+| All workers (default) | 505 | **~60,000** |
 | Release workflow: `apps,builds,export_compliance,versions,reviews` | ~72 | ~8,900 |
 | Monetization: `apps,iap,subscriptions,pricing` | 184 | ~21,100 |
 | TestFlight: `apps,builds,beta_groups,beta_testers` | ~63 | ~7,100 |
@@ -608,7 +609,7 @@ Exact cost depends on the MCP host's serialization, tokenizer, and tool-discover
 
 ## Available Tools
 
-**502 tools** organized across 33 App Store tool domains + 2 core domains (use the 35 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
+**505 tools** organized across 34 App Store tool domains + 2 core domains (use the 36 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -1233,6 +1234,19 @@ Includes App Store review attachment upload, get, delete, and list tools.
 
 </details>
 
+<details>
+<summary><strong>App Privacy Reference</strong> — 3 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `app_privacy_list_categories` | List the 35 privacy data types with their App Store label groups |
+| `app_privacy_list_purposes` | List the 6 data usage purposes with what each one covers |
+| `app_privacy_list_protections` | List the 4 data protection levels with what each one means |
+
+Apple does not expose App Privacy details in the App Store Connect API, and the privacy vocabulary is absent from the pinned Apple OpenAPI 4.4.1 document. These three tools therefore answer entirely from checked-in reference data: they make no network request, need no credentials, and cannot read or write an app's declaration. Use them to plan or review a declaration, then apply it in App Store Connect under App Privacy.
+
+</details>
+
 ## Usage Examples
 
 ### Complete Release Workflow
@@ -1317,7 +1331,7 @@ Sources/asc-mcp/
 │   ├── HTTPClient.swift            #   Actor-based HTTP with retry logic
 │   ├── JWTService.swift            #   ES256 JWT token generation
 │   └── CompaniesManager.swift      #   Multi-account management
-└── Workers/                        # MCP tool implementations (39 Swift worker classes + MainWorker router)
+└── Workers/                        # MCP tool implementations (40 Swift worker classes + MainWorker router)
     ├── MainWorker/WorkerManager    #   Central tool registry & routing
     ├── CompaniesWorker/            #   company_* tools
     ├── AuthWorker/                 #   auth_* tools
@@ -1357,7 +1371,8 @@ Sources/asc-mcp/
     ├── PromotedPurchasesWorker/    #   promoted_* tools
     ├── ReviewAttachmentsWorker/    #   review_attachments_* tools
     ├── ReviewSubmissionsWorker/    #   review_submissions_* tools
-    └── MetricsWorker/              #   metrics_* tools
+    ├── MetricsWorker/              #   metrics_* tools
+    └── AppPrivacyWorker/           #   app_privacy_* tools (offline reference data)
 ```
 
 ### Design Principles

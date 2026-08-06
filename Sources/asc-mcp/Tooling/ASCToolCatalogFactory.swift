@@ -48,7 +48,8 @@ enum ASCToolCatalogFactory {
         "promoted": "Promoted Purchases",
         "review_attachments": "Review Attachments",
         "review_submissions": "Review Submissions",
-        "metrics": "Performance Metrics"
+        "metrics": "Performance Metrics",
+        "app_privacy": "App Privacy Reference"
     ]
 
     static func collectWorkerToolSnapshots() async throws -> [ASCWorkerToolSnapshot] {
