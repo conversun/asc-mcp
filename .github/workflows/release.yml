@@ -108,12 +108,32 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.meta.outputs.tag }}
+          VERSION: ${{ steps.meta.outputs.version }}
           ARM: ${{ steps.pkg.outputs.arm }}
           X64: ${{ steps.pkg.outputs.x64 }}
         run: |
           set -euo pipefail
+
+          # The CI publish job verifies that the release body equals this exact
+          # CHANGELOG section, so the body is derived the same way here. Creating
+          # the release with generated notes instead would fail that comparison
+          # whenever this workflow wins the race.
+          notes_path="$RUNNER_TEMP/release-notes.md"
+          awk -v heading="## [$VERSION]" '
+            index($0, heading " - ") == 1 { capture = 1; next }
+            capture && /^## \[/ { exit }
+            capture { print }
+          ' CHANGELOG.md > "$notes_path"
+          if ! grep -q '[^[:space:]]' "$notes_path"; then
+            echo "CHANGELOG.md has no release notes for $TAG." >&2
+            exit 1
+          fi
+
           if ! gh release view "$TAG" > /dev/null 2>&1; then
-            gh release create "$TAG" --title "$TAG" --generate-notes
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --target main \
+              --notes-file "$notes_path"
           fi
           gh release upload "$TAG" \
             "$ARM" "${ARM}.sha256" \
