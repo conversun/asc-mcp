@@ -1,0 +1,131 @@
+name: Release Binaries
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to build and attach binaries to
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-binaries-${{ github.event.inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build & Publish Binaries
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Resolve release tag
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          if [[ ! "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Release tag must be exact SemVer in the form vMAJOR.MINOR.PATCH: $tag" >&2
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app
+
+      - name: Build universal binary (arm64 + x86_64)
+        run: swift build --disable-automatic-resolution -c release --arch arm64 --arch x86_64
+
+      - name: Package binaries
+        id: pkg
+        shell: bash
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          bin_dir="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)"
+          file "$bin_dir/asc-mcp"
+          lipo -archs "$bin_dir/asc-mcp"
+
+          # The OpenAPI operation manifest ships as a SwiftPM resource bundle that must
+          # sit next to the executable, so the archive carries both.
+          rm -rf stage && mkdir -p stage
+          cp "$bin_dir/asc-mcp" stage/asc-mcp
+          cp -R "$bin_dir/asc-mcp_asc-mcp.bundle" stage/
+
+          test "$(stage/asc-mcp --version)" = "asc-mcp $VERSION"
+          stage/asc-mcp openapi-coverage \
+            --spec Tests/ASCMCPTests/Fixtures/openapi_minimal.oas.json \
+            --output "$RUNNER_TEMP/coverage.md" \
+            --generated-at 2026-05-07
+          test -s "$RUNNER_TEMP/coverage.md"
+
+          arm="asc-mcp-${TAG}-darwin-arm64.tar.gz"
+          x64="asc-mcp-${TAG}-darwin-x86_64.tar.gz"
+          tar -czf "$arm" -C stage asc-mcp asc-mcp_asc-mcp.bundle
+          cp "$arm" "$x64"
+          shasum -a 256 "$arm" > "${arm}.sha256"
+          shasum -a 256 "$x64" > "${x64}.sha256"
+
+          echo "arm=$arm" >> "$GITHUB_OUTPUT"
+          echo "x64=$x64" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the archived binary runs after relocation
+        shell: bash
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          ARM: ${{ steps.pkg.outputs.arm }}
+        run: |
+          set -euo pipefail
+          relocated="$RUNNER_TEMP/relocated"
+          rm -rf "$relocated" && mkdir -p "$relocated"
+          tar -xzf "$ARM" -C "$relocated"
+          test "$("$relocated/asc-mcp" --version)" = "asc-mcp $VERSION"
+          python3 Scripts/ci/mcp_stdio_smoke.py \
+            --binary "$relocated/asc-mcp" \
+            --expected-version "$VERSION" \
+            --expected-tool-count 502 \
+            --expected-prefix xcode_cloud_ \
+            --expected-prefix-count 42 \
+            --error-tool xcode_cloud_workflows_create \
+            > "$RUNNER_TEMP/mcp-smoke.json"
+
+      - name: Attach binaries to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          ARM: ${{ steps.pkg.outputs.arm }}
+          X64: ${{ steps.pkg.outputs.x64 }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            gh release create "$TAG" --title "$TAG" --generate-notes
+          fi
+          gh release upload "$TAG" \
+            "$ARM" "${ARM}.sha256" \
+            "$X64" "${X64}.sha256" \
+            --clobber
+
+      - name: Upload build evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-binaries-${{ steps.meta.outputs.tag }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/mcp-smoke.json
+          if-no-files-found: warn
+          retention-days: 30
